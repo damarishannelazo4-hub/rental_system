@@ -11,21 +11,103 @@ $page_title = $page_title ?? "Admin";
 
 /* =========================
    NOTIFICATIONS
-   ========================= */
+   Each event shows ONCE. After the dropdown is opened they are
+   marked as seen (admin_seen = 1).
+   1) a customer rents (new reservation request)
+   2) items were returned
+========================= */
 
-/* Pending reservations */
+function short_date($d) {
+    return date("M j, Y", strtotime($d));
+}
 
-$pendingCount = 0;
+/* 1) New reservation requests (one notification per order) */
+
+$newRes = [];
 
 $result = $conn->query("
-    SELECT COUNT(*) AS total
-    FROM reservations
-    WHERE status = 'Pending'
+    SELECT r.reservation_id, r.order_ref, r.rental_date, r.return_date, u.full_name
+    FROM reservations r
+    JOIN users u ON u.user_id = r.user_id
+    WHERE r.status = 'Pending'
+      AND r.admin_seen = 0
+    ORDER BY r.reservation_id DESC
 ");
 
-if ($result) {
-    $pendingCount = (int)$result->fetch_assoc()["total"];
+while ($result && ($row = $result->fetch_assoc())) {
+
+    $key = (($row["order_ref"] ?? "") !== "")
+        ? $row["order_ref"]
+        : "#" . $row["reservation_id"];
+
+    if (!isset($newRes[$key])) {
+        $newRes[$key] = [
+            "ref"      => $key,
+            "customer" => $row["full_name"],
+            "from"     => $row["rental_date"],
+            "to"       => $row["return_date"],
+            "lines"    => 0,
+            "ids"      => []
+        ];
+    }
+
+    $newRes[$key]["lines"]++;
+    $newRes[$key]["ids"][] = (int)$row["reservation_id"];
 }
+
+$newRes = array_slice($newRes, 0, 8, true);
+
+$resIds = [];
+
+foreach ($newRes as $n) {
+    $resIds = array_merge($resIds, $n["ids"]);
+}
+
+
+/* 2) Returned items (one notification per customer and return date) */
+
+$returned = [];
+
+$result = $conn->query("
+    SELECT rt.rental_id,
+           rt.quantity,
+           rt.actual_return_date,
+           i.item_name,
+           COALESCE(u.full_name, NULLIF(rt.walk_in_name, ''), 'Walk-in') AS customer
+    FROM rentals rt
+    JOIN items i ON i.item_id = rt.item_id
+    LEFT JOIN users u ON u.user_id = rt.user_id
+    WHERE rt.status = 'Returned'
+      AND rt.admin_seen = 0
+    ORDER BY rt.actual_return_date DESC, rt.rental_id DESC
+");
+
+while ($result && ($row = $result->fetch_assoc())) {
+
+    $key = $row["customer"] . "|" . $row["actual_return_date"];
+
+    if (!isset($returned[$key])) {
+        $returned[$key] = [
+            "customer" => $row["customer"],
+            "date"     => $row["actual_return_date"],
+            "items"    => [],
+            "ids"      => []
+        ];
+    }
+
+    $returned[$key]["items"][] = $row["item_name"] . " × " . max(1, (int)$row["quantity"]);
+    $returned[$key]["ids"][]   = (int)$row["rental_id"];
+}
+
+$returned = array_slice($returned, 0, 8, true);
+
+$rentIds = [];
+
+foreach ($returned as $n) {
+    $rentIds = array_merge($rentIds, $n["ids"]);
+}
+
+$notificationCount = count($newRes) + count($returned);
 
 
 /* =========================
@@ -63,11 +145,6 @@ if ($result) {
     $dueTomorrow = (int)$result->fetch_assoc()["total"];
 }
 
-
-/* Total notification count */
-
-$notificationCount = $pendingCount + $dueToday + $dueTomorrow;
-
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -75,24 +152,17 @@ $notificationCount = $pendingCount + $dueToday + $dueTomorrow;
 <head>
 
 <meta charset="UTF-8">
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title><?= e($page_title) ?> | Local Rentals</title>
 
 <link rel="stylesheet" href="<?= $base ?>assets/style.css">
 
-
 <style>
 
-/* =========================
-   ADMIN ACCOUNT DROPDOWN
-   ========================= */
+/* ADMIN ACCOUNT DROPDOWN */
 
-.account-area {
-    position: relative;
-}
-
+.account-area { position: relative; }
 
 .account-chip {
     cursor: pointer;
@@ -102,11 +172,7 @@ $notificationCount = $pendingCount + $dueToday + $dueTomorrow;
     transition: background 0.2s ease;
 }
 
-
-.account-chip:hover {
-    background: #eef4fa;
-}
-
+.account-chip:hover { background: #eef4fa; }
 
 .account-dropdown {
     display: none;
@@ -122,13 +188,7 @@ $notificationCount = $pendingCount + $dueToday + $dueTomorrow;
     overflow: hidden;
 }
 
-
-.account-dropdown.show {
-    display: block;
-}
-
-
-/* Header */
+.account-dropdown.show { display: block; }
 
 .dropdown-header {
     padding: 16px 18px;
@@ -137,18 +197,9 @@ $notificationCount = $pendingCount + $dueToday + $dueTomorrow;
     color: #17395f;
 }
 
+.dropdown-section { padding: 14px 18px; }
 
-/* Sections */
-
-.dropdown-section {
-    padding: 14px 18px;
-}
-
-
-.dropdown-section + .dropdown-section {
-    border-top: 1px solid #edf0f4;
-}
-
+.dropdown-section + .dropdown-section { border-top: 1px solid #edf0f4; }
 
 .dropdown-title {
     font-size: 13px;
@@ -156,9 +207,6 @@ $notificationCount = $pendingCount + $dueToday + $dueTomorrow;
     color: #17395f;
     margin-bottom: 10px;
 }
-
-
-/* Notification item */
 
 .dropdown-item {
     display: flex;
@@ -170,11 +218,7 @@ $notificationCount = $pendingCount + $dueToday + $dueTomorrow;
     font-size: 14px;
 }
 
-
-.dropdown-item:hover {
-    color: #287fc9;
-}
-
+.dropdown-item:hover { color: #287fc9; }
 
 .dropdown-icon {
     width: 28px;
@@ -187,24 +231,17 @@ $notificationCount = $pendingCount + $dueToday + $dueTomorrow;
     flex-shrink: 0;
 }
 
+.dropdown-text { line-height: 1.4; }
 
-.dropdown-text {
-    line-height: 1.4;
-}
+.dropdown-text strong { display: block; color: #17395f; }
 
+.dropdown-text small { color: #718096; }
 
-.dropdown-text strong {
-    display: block;
+.dropdown-link-row {
+    align-items: center;
+    font-weight: 600;
     color: #17395f;
 }
-
-
-.dropdown-text small {
-    color: #718096;
-}
-
-
-/* Number badge */
 
 .notification-badge {
     display: inline-flex;
@@ -221,280 +258,209 @@ $notificationCount = $pendingCount + $dueToday + $dueTomorrow;
     font-weight: 700;
 }
 
-
 .empty-notification {
     color: #8995a3;
     font-size: 13px;
     padding: 5px 0;
 }
 
-
 </style>
 
 </head>
-
 
 <body>
 
 <div class="app-shell">
 
-
 <aside class="sidebar">
 
     <div class="brand-mini">
-
-        <img
-            src="<?= $base ?>images/logo.jpeg"
-            alt="Logo"
-        >
-
+        <img src="<?= $base ?>images/logo.jpeg" alt="Logo">
         <div>Rental System</div>
-
     </div>
-
 
     <nav>
 
-        <a
-            class="<?= ($active ?? '') === 'dashboard' ? 'active' : '' ?>"
-            href="<?= $base ?>admin/dashboard.php"
-        >
+        <a class="<?= ($active ?? '') === 'dashboard' ? 'active' : '' ?>"
+           href="<?= $base ?>admin/dashboard.php">
             ⌂ <span>Dashboard</span>
         </a>
 
-
-        <a
-            class="<?= ($active ?? '') === 'items' ? 'active' : '' ?>"
-            href="<?= $base ?>admin/items.php"
-        >
+        <a class="<?= ($active ?? '') === 'items' ? 'active' : '' ?>"
+           href="<?= $base ?>admin/items.php">
             ▣ <span>Items</span>
         </a>
 
-
-        <a
-            class="<?= ($active ?? '') === 'customers' ? 'active' : '' ?>"
-            href="<?= $base ?>admin/customers.php"
-        >
+        <a class="<?= ($active ?? '') === 'customers' ? 'active' : '' ?>"
+           href="<?= $base ?>admin/customers.php">
             ♙ <span>Customers</span>
         </a>
 
-
-        <a
-            class="<?= ($active ?? '') === 'reservations' ? 'active' : '' ?>"
-            href="<?= $base ?>admin/reservations.php"
-        >
+        <a class="<?= ($active ?? '') === 'reservations' ? 'active' : '' ?>"
+           href="<?= $base ?>admin/reservations.php">
             ▤ <span>Reservations</span>
         </a>
 
-
-        <a
-            class="<?= ($active ?? '') === 'rentals' ? 'active' : '' ?>"
-            href="<?= $base ?>admin/rentals.php"
-        >
-            ↻ <span>Rentals & Returns</span>
+        <a class="<?= ($active ?? '') === 'walkin' ? 'active' : '' ?>"
+           href="<?= $base ?>admin/walkin.php">
+            ✎ <span>Walk-in Rental</span>
         </a>
 
+        <a class="<?= ($active ?? '') === 'rentals' ? 'active' : '' ?>"
+           href="<?= $base ?>admin/rentals.php">
+            ↻ <span>Rentals</span>
+        </a>
 
-        <a
-            class="<?= ($active ?? '') === 'reports' ? 'active' : '' ?>"
-            href="<?= $base ?>admin/reports.php"
-        >
+        <a class="<?= ($active ?? '') === 'returns' ? 'active' : '' ?>"
+           href="<?= $base ?>admin/returns.php">
+            ↩ <span>Returns</span>
+        </a>
+
+        <a class="<?= ($active ?? '') === 'reports' ? 'active' : '' ?>"
+           href="<?= $base ?>admin/reports.php">
             ▥ <span>Reports</span>
         </a>
 
     </nav>
 
-
-    <a
-        class="logout-link"
-        href="<?= $base ?>logout.php"
-    >
+    <a class="logout-link" href="<?= $base ?>logout.php">
         ↪ <span>Logout</span>
     </a>
 
 </aside>
 
-
 <main class="main-content">
-
 
 <header class="topbar">
 
     <div>
-
-        <h1>
-            <?= e($page_title) ?>
-        </h1>
-
-        <p>
-            Local Rentals & Reservations System
-        </p>
-
+        <h1><?= e($page_title) ?></h1>
+        <p>Local Rentals & Reservations System</p>
     </div>
-
 
     <!-- ADMIN ACCOUNT -->
 
     <div class="account-area">
 
-        <div
-            class="account-chip"
-            id="adminAccountButton"
-        >
+        <div class="account-chip" id="adminAccountButton">
 
-            ● Admin
+            ● <?= e($_SESSION["username"] ?? "Admin") ?>
 
             <?php if ($notificationCount > 0): ?>
-
-                <span class="notification-badge">
-                    <?= $notificationCount ?>
-                </span>
-
+                <span class="notification-badge" id="adminBadge"><?= $notificationCount ?></span>
             <?php endif; ?>
 
             ▾
 
         </div>
 
+        <div class="account-dropdown" id="adminDropdown">
 
-        <!-- DROPDOWN -->
+            <div class="dropdown-header">Admin Account</div>
 
-        <div
-            class="account-dropdown"
-            id="adminDropdown"
-        >
-
-
-            <div class="dropdown-header">
-
-                Admin Notifications
-
-            </div>
-
-
-            <!-- NOTIFICATIONS -->
+            <!-- ACCOUNT LINKS -->
 
             <div class="dropdown-section">
 
-                <div class="dropdown-title">
-                    🔔 Notifications
-                </div>
+                <a href="<?= $base ?>admin/profile.php" class="dropdown-item dropdown-link-row">
+                    <div class="dropdown-icon">👤</div>
+                    <div class="dropdown-text">My Profile</div>
+                </a>
 
+                <a href="<?= $base ?>admin/create_account.php" class="dropdown-item dropdown-link-row">
+                    <div class="dropdown-icon">✚</div>
+                    <div class="dropdown-text">Create Account</div>
+                </a>
 
-                <?php if ($pendingCount > 0): ?>
+            </div>
 
-                    <a
-                        href="<?= $base ?>admin/reservations.php"
-                        class="dropdown-item"
-                    >
+            <!-- NOTIFICATIONS (shown once) -->
 
-                        <div class="dropdown-icon">
-                            🔔
-                        </div>
+            <div class="dropdown-section">
 
+                <div class="dropdown-title">🔔 Notifications</div>
+
+                <?php foreach ($newRes as $n): ?>
+
+                    <a href="<?= $base ?>admin/reservations.php" class="dropdown-item">
+                        <div class="dropdown-icon">🔔</div>
                         <div class="dropdown-text">
-
-                            <strong>
-                                New reservation request
-                            </strong>
-
+                            <strong>New rent request</strong>
                             <small>
-                                <?= $pendingCount ?>
-                                pending reservation(s) waiting for approval.
+                                <?= e($n["customer"]) ?> &middot; Ref <?= e($n["ref"]) ?><br>
+                                <?= (int)$n["lines"] ?> item(s) &middot;
+                                <?= e(short_date($n["from"])) ?> to <?= e(short_date($n["to"])) ?>
                             </small>
-
                         </div>
-
                     </a>
 
-                <?php else: ?>
+                <?php endforeach; ?>
 
-                    <div class="empty-notification">
-                        No new reservation requests.
-                    </div>
+                <?php foreach ($returned as $n): ?>
+
+                    <?php
+                    $names = array_slice($n["items"], 0, 3);
+                    $extra = count($n["items"]) - count($names);
+                    ?>
+
+                    <a href="<?= $base ?>admin/returns.php" class="dropdown-item">
+                        <div class="dropdown-icon">↩</div>
+                        <div class="dropdown-text">
+                            <strong>Items returned</strong>
+                            <small>
+                                <?= e($n["customer"]) ?> &middot; <?= e(short_date($n["date"])) ?><br>
+                                <?= e(implode(", ", $names)) ?><?= $extra > 0 ? " +" . $extra . " more" : "" ?>
+                            </small>
+                        </div>
+                    </a>
+
+                <?php endforeach; ?>
+
+                <?php if (!$newRes && !$returned): ?>
+
+                    <div class="empty-notification">No new notifications.</div>
 
                 <?php endif; ?>
 
             </div>
-
 
             <!-- REMINDERS -->
 
             <div class="dropdown-section">
 
-                <div class="dropdown-title">
-                    ⏰ Reminders
-                </div>
-
+                <div class="dropdown-title">⏰ Reminders</div>
 
                 <?php if ($dueToday > 0): ?>
 
-                    <a
-                        href="<?= $base ?>admin/rentals.php"
-                        class="dropdown-item"
-                    >
-
-                        <div class="dropdown-icon">
-                            ⏰
-                        </div>
-
+                    <a href="<?= $base ?>admin/rentals.php" class="dropdown-item">
+                        <div class="dropdown-icon">⏰</div>
                         <div class="dropdown-text">
-
-                            <strong>
-                                Rental due today
-                            </strong>
-
-                            <small>
-                                <?= $dueToday ?>
-                                rental(s) are due today.
-                            </small>
-
+                            <strong>Rental due today</strong>
+                            <small><?= $dueToday ?> rental(s) are due today.</small>
                         </div>
-
                     </a>
 
                 <?php endif; ?>
-
 
                 <?php if ($dueTomorrow > 0): ?>
 
-                    <a
-                        href="<?= $base ?>admin/rentals.php"
-                        class="dropdown-item"
-                    >
-
-                        <div class="dropdown-icon">
-                            📅
-                        </div>
-
+                    <a href="<?= $base ?>admin/rentals.php" class="dropdown-item">
+                        <div class="dropdown-icon">📅</div>
                         <div class="dropdown-text">
-
-                            <strong>
-                                Rental due tomorrow
-                            </strong>
-
-                            <small>
-                                <?= $dueTomorrow ?>
-                                rental(s) are due tomorrow.
-                            </small>
-
+                            <strong>Rental due tomorrow</strong>
+                            <small><?= $dueTomorrow ?> rental(s) are due tomorrow.</small>
                         </div>
-
                     </a>
 
                 <?php endif; ?>
 
-
                 <?php if ($dueToday === 0 && $dueTomorrow === 0): ?>
 
-                    <div class="empty-notification">
-                        No upcoming rental reminders.
-                    </div>
+                    <div class="empty-notification">No upcoming rental reminders.</div>
 
                 <?php endif; ?>
 
             </div>
-
 
         </div>
 
@@ -502,53 +468,58 @@ $notificationCount = $pendingCount + $dueToday + $dueTomorrow;
 
 </header>
 
-
 <?php if ($msg = flash("success")): ?>
-
-    <div class="alert success-alert">
-        <?= e($msg) ?>
-    </div>
-
+    <div class="alert success-alert"><?= e($msg) ?></div>
 <?php endif; ?>
-
 
 <?php if ($msg = flash("error")): ?>
-
-    <div class="alert danger-alert">
-        <?= e($msg) ?>
-    </div>
-
+    <div class="alert danger-alert"><?= e($msg) ?></div>
 <?php endif; ?>
-
 
 <script>
 
 document.addEventListener("DOMContentLoaded", function () {
 
-    const button = document.getElementById("adminAccountButton");
+    const button   = document.getElementById("adminAccountButton");
     const dropdown = document.getElementById("adminDropdown");
+    const badge    = document.getElementById("adminBadge");
 
+    /* ids of the notifications shown in this dropdown */
+    const resIds  = <?= json_encode($resIds) ?>;
+    const rentIds = <?= json_encode($rentIds) ?>;
+
+    let marked = false;
 
     button.addEventListener("click", function (event) {
 
         event.stopPropagation();
-
         dropdown.classList.toggle("show");
 
+        /* mark as seen only once, when it is first opened */
+
+        if (!marked && (resIds.length || rentIds.length) && dropdown.classList.contains("show")) {
+
+            marked = true;
+
+            if (badge) {
+                badge.remove();
+            }
+
+            fetch("<?= $base ?>admin/mark_notifications_seen.php", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: "res=" + encodeURIComponent(resIds.join(",")) +
+                      "&rent=" + encodeURIComponent(rentIds.join(","))
+            }).catch(function (error) {
+                console.log("Notification error:", error);
+            });
+        }
     });
 
-
     document.addEventListener("click", function (event) {
-
-        if (
-            !dropdown.contains(event.target) &&
-            !button.contains(event.target)
-        ) {
-
+        if (!dropdown.contains(event.target) && !button.contains(event.target)) {
             dropdown.classList.remove("show");
-
         }
-
     });
 
 });

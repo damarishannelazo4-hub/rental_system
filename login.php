@@ -3,7 +3,7 @@ session_start();
 require_once "db.php";
 
 if (isset($_SESSION['user_id'])) {
-    header("Location: " . ($_SESSION['role'] === 'admin' ? "admin/dashboard.php" : "user/dashboard.php"));
+    header("Location: " . ($_SESSION['role'] === 'admin' ? "admin/dashboard.php" : "user/items.php"));
     exit;
 }
 
@@ -28,7 +28,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $_SESSION["username"] = $account["username"];
             $_SESSION["role"] = $account["role"];
 
-            header("Location: " . ($account["role"] === "admin" ? "admin/dashboard.php" : "user/dashboard.php"));
+            header("Location: " . ($account["role"] === "admin" ? "admin/dashboard.php" : "user/items.php"));
             exit;
         } else {
             $error = "Invalid username or password.";
@@ -42,7 +42,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Login | Local Rentals & Reservations</title>
-<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/style.css?v=<?= time() ?>">
 </head>
 <body class="login-page">
 <div class="login-wrap">
@@ -71,11 +71,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <button class="btn primary full" type="submit">Login</button>
         </form>
 
-        <div class="demo-box">
-            <strong>Demo Accounts</strong><br>
-            Admin: <b>admin</b> / <b>admin123</b><br>
-            User: <b>user</b> / <b>user123</b>
-        </div>
+        <p class="muted-text">
+            No account yet?
+            <a href="register.php" style="color:#2f80c9;font-weight:700;text-decoration:underline;">Register here</a>
+        </p>
     </div>
 </div>
 </body>
