@@ -33,16 +33,6 @@ $first = $rows[0];
 
 $days = max(1, (int)round((strtotime($first["return_date"]) - strtotime($first["rental_date"])) / 86400));
 
-/* Only allow files inside the uploads folder */
-function upload_url($path)
-{
-    $path = (string)$path;
-    if ($path === "" || strpos($path, "uploads/") !== 0 || strpos($path, "..") !== false) {
-        return "";
-    }
-    return "../" . $path;
-}
-
 $idUrl    = upload_url($first["id_photo"] ?? "");
 $proofUrl = upload_url($first["payment_proof"] ?? "");
 

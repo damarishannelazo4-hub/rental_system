@@ -15,10 +15,6 @@ $userName = $_SESSION["full_name"] ?? "User";
    HELPERS
 ========================= */
 
-function short_date($d) {
-    return date("M j, Y", strtotime($d));
-}
-
 /* Text + style for the due date of a rental */
 function due_text($returnDate) {
     $today = strtotime(date("Y-m-d"));

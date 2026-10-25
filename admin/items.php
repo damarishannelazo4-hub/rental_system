@@ -29,9 +29,13 @@ $imageMap = [
    DELETE ITEM
 ========================= */
 
-if (isset($_GET["delete"])) {
+if ($_SERVER["REQUEST_METHOD"] === "POST" || isset($_GET["delete"])) {
+    require_csrf();
+}
 
-    $id = (int) $_GET["delete"];
+if (isset($_POST["delete"])) {
+
+    $id = (int) $_POST["delete"];
 
     $stmt = $conn->prepare("DELETE FROM items WHERE item_id = ?");
     $stmt->bind_param("i", $id);
@@ -327,6 +331,7 @@ while ($sr = $stockRes->fetch_assoc()) {
         </div>
 
         <form method="POST" class="item-form">
+                <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
 
             <input type="hidden" name="item_id" value="<?= e($edit["item_id"] ?? 0) ?>">
 
@@ -437,6 +442,7 @@ while ($sr = $stockRes->fetch_assoc()) {
                                 </div>
 
                                 <form method="POST" class="stock-form">
+                                    <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
                                     <input type="hidden" name="action" value="add_stock">
                                     <input type="hidden" name="item_id" value="<?= (int) $item["item_id"] ?>">
                                     <input type="number" name="add_qty" min="1" placeholder="+ pcs" required>
@@ -461,8 +467,10 @@ while ($sr = $stockRes->fetch_assoc()) {
                         <td style="white-space:nowrap;">
                             <a class="icon-btn edit" href="?edit=<?= (int) $item["item_id"] ?>" title="Edit Item">✎</a>
 
-                            <a class="icon-btn delete" href="?delete=<?= (int) $item["item_id"] ?>"
-                               onclick="return confirm('Delete this item?')" title="Delete Item">✕</a>
+                            <form method="POST" style="display:inline" onsubmit="return confirm('Delete this item?')">
+                                <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
+                                <button class="icon-btn delete" name="delete" value="<?= (int) $item["item_id"] ?>" aria-label="Delete item">✕</button>
+                            </form>
                         </td>
 
                     </tr>

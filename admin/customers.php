@@ -7,8 +7,12 @@ require_role("admin");
 $page_title = "Customer Management";
 $active = "customers";
 
-if (isset($_GET["delete"])) {
-    $id = (int)$_GET["delete"];
+if ($_SERVER["REQUEST_METHOD"] === "POST" || isset($_GET["delete"])) {
+    require_csrf();
+}
+
+if (isset($_POST["delete"])) {
+    $id = (int)$_POST["delete"];
     if ($id === (int)$_SESSION["user_id"]) {
         flash("error", "You cannot delete your own admin account.");
     } else {
@@ -69,6 +73,7 @@ $customers = $conn->query("SELECT * FROM users WHERE role='user' ORDER BY user_i
 <section class="panel">
     <div class="panel-head"><h2>Edit Customer</h2></div>
     <form method="POST" class="form-grid" autocomplete="off">
+        <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
         <input type="hidden" name="user_id" value="<?= (int)$edit["user_id"] ?>">
         <label>First Name<input name="first_name" value="<?= e($edit["first_name"] ?: $edit["full_name"]) ?>" required></label>
         <label>Middle Name (optional)<input name="middle_name" value="<?= e($edit["middle_name"] ?? "") ?>"></label>
@@ -100,7 +105,10 @@ $customers = $conn->query("SELECT * FROM users WHERE role='user' ORDER BY user_i
         <td><?= e($c["address"]) ?></td>
         <td>
             <a class="icon-btn edit" href="?edit=<?= (int)$c["user_id"] ?>">✎</a>
-            <a class="icon-btn delete" onclick="return confirm('Delete customer?')" href="?delete=<?= (int)$c["user_id"] ?>">✕</a>
+            <form method="POST" style="display:inline" onsubmit="return confirm('Delete customer?')">
+                <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
+                <button class="icon-btn delete" name="delete" value="<?= (int)$c["user_id"] ?>" aria-label="Delete customer">✕</button>
+            </form>
         </td>
     </tr>
     <?php endwhile; ?>

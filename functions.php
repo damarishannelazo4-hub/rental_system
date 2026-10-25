@@ -16,6 +16,19 @@ function e($value) {
     return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
 }
 
+function csrf_token() {
+    return $_SESSION['csrf_token'] ??= bin2hex(random_bytes(32));
+}
+
+function require_csrf() {
+    $token = $_POST['csrf_token'] ?? null;
+    if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST' || !is_string($token)
+        || !isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $token)) {
+        http_response_code(403);
+        exit('Invalid request token. Refresh the page and try again.');
+    }
+}
+
 function require_login() {
     if (!isset($_SESSION['user_id'])) {
         header("Location: ../login.php");
@@ -54,6 +67,20 @@ function status_badge($status) {
         'Rented' => 'warning'
     ];
     return '<span class="badge ' . ($map[$status] ?? 'muted') . '">' . e($status) . '</span>';
+}
+
+function short_date($d) {
+    return date("M j, Y", strtotime($d));
+}
+
+/* Only allow files inside the uploads folder */
+function upload_url($path)
+{
+    $path = (string)$path;
+    if ($path === "" || strpos($path, "uploads/") !== 0 || strpos($path, "..") !== false) {
+        return "";
+    }
+    return "../" . $path;
 }
 
 function go($url) {
@@ -129,11 +156,6 @@ function get_items_with_stock($conn, array $ids = []) {
 /* =========================
    COMBO PRICE HELPERS
 ========================= */
-
-// Per-day price of a combo after the discount
-function combo_discounted($perDayTotal) {
-    return round((float)$perDayTotal * (100 - COMBO_DISCOUNT_PERCENT) / 100, 2);
-}
 
 // How much the discount takes off (per day)
 function combo_discount_amount($perDayTotal) {
@@ -282,10 +304,6 @@ function draft_need() {
     }
 
     return $need;
-}
-
-function draft_count() {
-    return array_sum(draft_need());
 }
 
 function draft_clear() {

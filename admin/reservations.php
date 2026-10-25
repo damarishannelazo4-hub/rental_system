@@ -16,11 +16,20 @@ $active = "reservations";
 ========================================================= */
 
 if (isset($_GET["action"]) && in_array($_GET["action"], ["approve", "reject"], true)) {
+    http_response_code(405);
+    header("Allow: POST");
+    exit("Use the reservation action form.");
+}
 
-    $action = $_GET["action"];
-    $ref    = trim($_GET["ref"] ?? "");
-    $id     = (int)($_GET["id"] ?? 0);
+if (isset($_POST["action"]) && in_array($_POST["action"], ["approve", "reject"], true)) {
+    require_csrf();
 
+    $action = $_POST["action"];
+    $ref    = trim($_POST["ref"] ?? "");
+    $id     = (int)($_POST["id"] ?? 0);
+
+    $conn->begin_transaction();
+    try {
     if ($ref !== "") {
 
         $stmt = $conn->prepare("
@@ -28,6 +37,7 @@ if (isset($_GET["action"]) && in_array($_GET["action"], ["approve", "reject"], t
             FROM reservations
             WHERE order_ref = ? AND status = 'Pending'
             ORDER BY reservation_id ASC
+            FOR UPDATE
         ");
         $stmt->bind_param("s", $ref);
 
@@ -38,6 +48,7 @@ if (isset($_GET["action"]) && in_array($_GET["action"], ["approve", "reject"], t
             SELECT *
             FROM reservations
             WHERE reservation_id = ? AND status = 'Pending'
+            FOR UPDATE
         ");
         $stmt->bind_param("i", $id);
     }
@@ -52,10 +63,6 @@ if (isset($_GET["action"]) && in_array($_GET["action"], ["approve", "reject"], t
         /* APPROVE */
 
         if ($action === "approve") {
-
-            $conn->begin_transaction();
-
-            try {
 
                 $ins = $conn->prepare("
                     INSERT INTO rentals
@@ -178,16 +185,7 @@ if (isset($_GET["action"]) && in_array($_GET["action"], ["approve", "reject"], t
                     $setItem->execute();
                 }
 
-                $conn->commit();
-
                 flash("success", "Reservation approved and rental started.");
-
-            } catch (Exception $e) {
-
-                $conn->rollback();
-
-                flash("error", "Could not approve reservation.");
-            }
 
 
         /* REJECT */
@@ -210,6 +208,12 @@ if (isset($_GET["action"]) && in_array($_GET["action"], ["approve", "reject"], t
         }
     }
 
+    $conn->commit();
+    } catch (Throwable $e) {
+        $conn->rollback();
+        flash("error", "Could not update reservation.");
+    }
+
     header("Location: reservations.php");
     exit;
 }
@@ -221,16 +225,6 @@ require "../partials/admin_header.php";
 /* =========================================================
    HELPERS
 ========================================================= */
-
-/* Only allow files inside the uploads folder */
-function upload_url($path)
-{
-    $path = (string)$path;
-    if ($path === "" || strpos($path, "uploads/") !== 0 || strpos($path, "..") !== false) {
-        return "";
-    }
-    return "../" . $path;
-}
 
 function pay_badge_class($s)
 {
@@ -677,7 +671,18 @@ $countAll          = $countReservations + $countWalkins;
                                 </span>
                             </td>
 
-                            <td><?= status_badge($o["status"]) ?></td>
+                            <td>
+                                <?= status_badge($o["status"]) ?>
+                                <?php if (!$o["walkin"] && $o["status"] === "Pending"): ?>
+                                    <form method="POST">
+                                        <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
+                                        <input type="hidden" name="ref" value="<?= e($o["ref"]) ?>">
+                                        <input type="hidden" name="id" value="<?= (int)$o["id"] ?>">
+                                        <button name="action" value="approve">Approve</button>
+                                        <button name="action" value="reject">Reject</button>
+                                    </form>
+                                <?php endif; ?>
+                            </td>
 
                         </tr>
 

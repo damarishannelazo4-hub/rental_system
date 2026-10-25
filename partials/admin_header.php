@@ -17,10 +17,6 @@ $page_title = $page_title ?? "Admin";
    2) items were returned
 ========================= */
 
-function short_date($d) {
-    return date("M j, Y", strtotime($d));
-}
-
 /* 1) New reservation requests (one notification per order) */
 
 $newRes = [];
