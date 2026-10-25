@@ -17,10 +17,6 @@ $page_title = $page_title ?? "Admin";
    2) items were returned
 ========================= */
 
-function short_date($d) {
-    return date("M j, Y", strtotime($d));
-}
-
 /* 1) New reservation requests (one notification per order) */
 
 $newRes = [];
@@ -156,7 +152,7 @@ if ($result) {
 
 <title><?= e($page_title) ?> | Local Rentals</title>
 
-<link rel="stylesheet" href="<?= $base ?>assets/style.css">
+<link rel="stylesheet" href="<?= $base ?>assets/style.css?v=<?= filemtime(__DIR__ . '/../assets/style.css') ?>">
 
 <style>
 
@@ -266,13 +262,15 @@ if ($result) {
 
 </style>
 
+<script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js" defer></script>
 </head>
 
 <body>
 
 <div class="app-shell">
 
-<aside class="sidebar">
+<noscript><style>@media(max-width:700px){.sidebar{display:flex}}</style></noscript>
+<aside class="sidebar" id="site-sidebar" aria-label="Main navigation">
 
     <div class="brand-mini">
         <img src="<?= $base ?>images/logo.jpeg" alt="Logo">
@@ -283,55 +281,57 @@ if ($result) {
 
         <a class="<?= ($active ?? '') === 'dashboard' ? 'active' : '' ?>"
            href="<?= $base ?>admin/dashboard.php">
-            ⌂ <span>Dashboard</span>
+            <iconify-icon icon="solar:widget-2-outline" aria-hidden="true"></iconify-icon> <span>Dashboard</span>
         </a>
 
         <a class="<?= ($active ?? '') === 'items' ? 'active' : '' ?>"
            href="<?= $base ?>admin/items.php">
-            ▣ <span>Items</span>
+            <iconify-icon icon="solar:box-outline" aria-hidden="true"></iconify-icon> <span>Items</span>
         </a>
 
         <a class="<?= ($active ?? '') === 'customers' ? 'active' : '' ?>"
            href="<?= $base ?>admin/customers.php">
-            ♙ <span>Customers</span>
+            <iconify-icon icon="solar:users-group-rounded-outline" aria-hidden="true"></iconify-icon> <span>Customers</span>
         </a>
 
         <a class="<?= ($active ?? '') === 'reservations' ? 'active' : '' ?>"
            href="<?= $base ?>admin/reservations.php">
-            ▤ <span>Reservations</span>
+            <iconify-icon icon="solar:calendar-outline" aria-hidden="true"></iconify-icon> <span>Reservations</span>
         </a>
 
         <a class="<?= ($active ?? '') === 'walkin' ? 'active' : '' ?>"
            href="<?= $base ?>admin/walkin.php">
-            ✎ <span>Walk-in Rental</span>
+            <iconify-icon icon="solar:pen-new-square-outline" aria-hidden="true"></iconify-icon> <span>Walk-in Rental</span>
         </a>
 
         <a class="<?= ($active ?? '') === 'rentals' ? 'active' : '' ?>"
            href="<?= $base ?>admin/rentals.php">
-            ↻ <span>Rentals</span>
+            <iconify-icon icon="solar:refresh-outline" aria-hidden="true"></iconify-icon> <span>Rentals</span>
         </a>
 
         <a class="<?= ($active ?? '') === 'returns' ? 'active' : '' ?>"
            href="<?= $base ?>admin/returns.php">
-            ↩ <span>Returns</span>
+            <iconify-icon icon="solar:undo-left-outline" aria-hidden="true"></iconify-icon> <span>Returns</span>
         </a>
 
         <a class="<?= ($active ?? '') === 'reports' ? 'active' : '' ?>"
            href="<?= $base ?>admin/reports.php">
-            ▥ <span>Reports</span>
+            <iconify-icon icon="solar:chart-square-outline" aria-hidden="true"></iconify-icon> <span>Reports</span>
         </a>
 
     </nav>
 
     <a class="logout-link" href="<?= $base ?>logout.php">
-        ↪ <span>Logout</span>
+        <iconify-icon icon="solar:logout-2-outline" aria-hidden="true"></iconify-icon> <span>Logout</span>
     </a>
 
 </aside>
+<script src="<?= $base ?>assets/navigation.js?v=<?= filemtime(__DIR__ . '/../assets/navigation.js') ?>"></script>
 
 <main class="main-content">
 
 <header class="topbar">
+    <button type="button" class="menu-toggle" aria-controls="site-sidebar" aria-expanded="false" aria-label="Open navigation" hidden><iconify-icon icon="solar:hamburger-menu-outline" aria-hidden="true"></iconify-icon></button>
 
     <div>
         <h1><?= e($page_title) ?></h1>
@@ -344,7 +344,7 @@ if ($result) {
 
         <div class="account-chip" id="adminAccountButton">
 
-            ● <?= e($_SESSION["username"] ?? "Admin") ?>
+            <iconify-icon icon="solar:user-circle-outline" aria-hidden="true"></iconify-icon> <?= e($_SESSION["username"] ?? "Admin") ?>
 
             <?php if ($notificationCount > 0): ?>
                 <span class="notification-badge" id="adminBadge"><?= $notificationCount ?></span>
@@ -363,12 +363,12 @@ if ($result) {
             <div class="dropdown-section">
 
                 <a href="<?= $base ?>admin/profile.php" class="dropdown-item dropdown-link-row">
-                    <div class="dropdown-icon">👤</div>
+                    <div class="dropdown-icon"><iconify-icon icon="solar:user-circle-outline" aria-hidden="true"></iconify-icon></div>
                     <div class="dropdown-text">My Profile</div>
                 </a>
 
                 <a href="<?= $base ?>admin/create_account.php" class="dropdown-item dropdown-link-row">
-                    <div class="dropdown-icon">✚</div>
+                    <div class="dropdown-icon"><iconify-icon icon="solar:user-plus-outline" aria-hidden="true"></iconify-icon></div>
                     <div class="dropdown-text">Create Account</div>
                 </a>
 
@@ -378,12 +378,12 @@ if ($result) {
 
             <div class="dropdown-section">
 
-                <div class="dropdown-title">🔔 Notifications</div>
+                <div class="dropdown-title"><iconify-icon icon="solar:bell-outline" aria-hidden="true"></iconify-icon> Notifications</div>
 
                 <?php foreach ($newRes as $n): ?>
 
                     <a href="<?= $base ?>admin/reservations.php" class="dropdown-item">
-                        <div class="dropdown-icon">🔔</div>
+                        <div class="dropdown-icon"><iconify-icon icon="solar:bell-outline" aria-hidden="true"></iconify-icon></div>
                         <div class="dropdown-text">
                             <strong>New rent request</strong>
                             <small>
@@ -404,7 +404,7 @@ if ($result) {
                     ?>
 
                     <a href="<?= $base ?>admin/returns.php" class="dropdown-item">
-                        <div class="dropdown-icon">↩</div>
+                        <div class="dropdown-icon"><iconify-icon icon="solar:undo-left-outline" aria-hidden="true"></iconify-icon></div>
                         <div class="dropdown-text">
                             <strong>Items returned</strong>
                             <small>
@@ -428,12 +428,12 @@ if ($result) {
 
             <div class="dropdown-section">
 
-                <div class="dropdown-title">⏰ Reminders</div>
+                <div class="dropdown-title"><iconify-icon icon="solar:alarm-outline" aria-hidden="true"></iconify-icon> Reminders</div>
 
                 <?php if ($dueToday > 0): ?>
 
                     <a href="<?= $base ?>admin/rentals.php" class="dropdown-item">
-                        <div class="dropdown-icon">⏰</div>
+                        <div class="dropdown-icon"><iconify-icon icon="solar:alarm-outline" aria-hidden="true"></iconify-icon></div>
                         <div class="dropdown-text">
                             <strong>Rental due today</strong>
                             <small><?= $dueToday ?> rental(s) are due today.</small>
@@ -445,7 +445,7 @@ if ($result) {
                 <?php if ($dueTomorrow > 0): ?>
 
                     <a href="<?= $base ?>admin/rentals.php" class="dropdown-item">
-                        <div class="dropdown-icon">📅</div>
+                        <div class="dropdown-icon"><iconify-icon icon="solar:calendar-outline" aria-hidden="true"></iconify-icon></div>
                         <div class="dropdown-text">
                             <strong>Rental due tomorrow</strong>
                             <small><?= $dueTomorrow ?> rental(s) are due tomorrow.</small>

@@ -43,6 +43,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Login | Local Rentals & Reservations</title>
 <link rel="stylesheet" href="assets/style.css?v=<?= time() ?>">
+<script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js" defer></script>
 </head>
 <body class="login-page">
 <div class="login-wrap">
@@ -53,7 +54,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     </div>
 
     <div class="login-card">
-        <div class="user-icon">●</div>
         <h2>Welcome Back!</h2>
         <p class="muted-text">Log in to your account</p>
 
@@ -62,11 +62,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         <?php endif; ?>
 
         <form method="POST">
-            <label>Username</label>
-            <input type="text" name="username" placeholder="Enter username" required>
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" placeholder="Enter username" autocomplete="username" required>
 
-            <label>Password</label>
-            <input type="password" name="password" placeholder="Enter password" required>
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" placeholder="Enter password" autocomplete="current-password" required>
 
             <button class="btn primary full" type="submit">Login</button>
         </form>

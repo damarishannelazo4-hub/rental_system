@@ -98,7 +98,7 @@ require "../partials/admin_header.php";
 <div class="stats-grid">
 
     <div class="stat-card">
-        <div class="stat-icon">▣</div>
+        <div class="stat-icon"><iconify-icon icon="solar:box-outline" aria-hidden="true"></iconify-icon></div>
         <div>
             <small>Total Items</small>
             <strong><?= $totalItems ?></strong>
@@ -106,7 +106,7 @@ require "../partials/admin_header.php";
     </div>
 
     <div class="stat-card">
-        <div class="stat-icon green">♙</div>
+        <div class="stat-icon green"><iconify-icon icon="solar:users-group-rounded-outline" aria-hidden="true"></iconify-icon></div>
         <div>
             <small>Total Customers</small>
             <strong><?= $totalCustomers ?></strong>
@@ -114,7 +114,7 @@ require "../partials/admin_header.php";
     </div>
 
     <div class="stat-card">
-        <div class="stat-icon orange">▤</div>
+        <div class="stat-icon orange"><iconify-icon icon="solar:calendar-outline" aria-hidden="true"></iconify-icon></div>
         <div>
             <small>Total Reservations</small>
             <strong><?= $totalReservations ?></strong>
@@ -122,7 +122,7 @@ require "../partials/admin_header.php";
     </div>
 
     <div class="stat-card">
-        <div class="stat-icon purple">↻</div>
+        <div class="stat-icon purple"><iconify-icon icon="solar:refresh-outline" aria-hidden="true"></iconify-icon></div>
         <div>
             <small>Active Rentals</small>
             <strong><?= $activeRentals ?></strong>

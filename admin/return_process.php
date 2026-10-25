@@ -73,10 +73,9 @@ $stmt = $conn->prepare("
         rt.rental_date,
         rt.return_date,
         rt.status,
-        rt.combo_id,
-        rt.combo_discount,
-        i.penalty_per_day,
-        i.price_per_day
+        rt.rental_fee,
+        rt.combo_saved,
+        i.penalty_per_day
     FROM rentals rt
     JOIN items i
         ON i.item_id = rt.item_id
@@ -93,6 +92,12 @@ $stmt->close();
 
 
 if (!$rental) {
+    header("Location: rentals.php");
+    exit;
+}
+
+if ($actual_return_date < $rental["rental_date"] || $actual_return_date > date("Y-m-d")) {
+    flash("error", "Return date must be between the rental start date and today.");
     header("Location: rentals.php");
     exit;
 }
@@ -155,19 +160,8 @@ if ($penalty > 0 && !$penalty_paid) {
 |--------------------------------------------------------------------------
 */
 
-$rentDate = new DateTime($rental["rental_date"]);
-
-$planned_days = max(1, (int)$rentDate->diff($dueDate)->days);
-
-$gross_fee = $quantity * (float)$rental["price_per_day"] * $planned_days;
-
-$combo_saved = 0.0;
-
-if (!empty($rental["combo_id"]) && $rental["combo_discount"] !== null) {
-    $combo_saved = round($gross_fee * (float)$rental["combo_discount"] / 100, 2);
-}
-
-$rental_fee = round($gross_fee - $combo_saved, 2);
+$rental_fee = (float)$rental["rental_fee"];
+$combo_saved = (float)$rental["combo_saved"];
 
 
 /*

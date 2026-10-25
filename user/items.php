@@ -40,8 +40,7 @@ $msg   = flash('draft');
     display: grid;
     grid-template-columns: minmax(0, 1fr) 370px;
     gap: 12px;
-    height: calc(100vh - 150px);
-    min-height: 520px;
+    align-items: start;
 }
 
 @media (max-width: 1000px) {
@@ -49,8 +48,7 @@ $msg   = flash('draft');
         grid-template-columns: 1fr;
         height: auto;
     }
-    .wk-left .wk-body { max-height: 75vh; }
-    .wk-rscroll { overflow: visible !important; }
+    .wk-left .wk-body { max-height: none; }
 }
 
 .wk-left,
@@ -90,9 +88,7 @@ $msg   = flash('draft');
 }
 
 .wk-body {
-    flex: 1;
-    min-height: 0;
-    overflow: auto;
+    min-width: 0;
 }
 
 /* ITEM CARDS */
@@ -227,6 +223,60 @@ $msg   = flash('draft');
 .wk-cbox .h { margin-top: 4px; font-size: 11px; font-weight: 700; color: #b42318; }
 
 /* YOUR RESERVATION */
+#your-reservation {
+    padding: 18px;
+}
+#your-reservation .wk-rhead {
+    padding-bottom: 14px;
+    margin-bottom: 0;
+    border-bottom: 1px solid var(--line);
+}
+#your-reservation .wk-rform { gap: 16px; }
+#your-reservation .wk-rscroll { gap: 16px; padding-right: 0; }
+#your-reservation .wk-two { gap: 10px; }
+#your-reservation .wk-rlabel { font-size: 12px; min-width: 0; }
+#your-reservation .wk-field {
+    min-width: 0;
+    min-height: 44px;
+    margin-top: 6px;
+    padding: 10px;
+    font-size: 14px;
+    background: var(--white);
+    color: var(--text);
+}
+#your-reservation .wk-field[readonly] { background: var(--bg); color: var(--muted); }
+#your-reservation .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+}
+#your-reservation .wk-sec {
+    padding: 14px;
+    border: 1px dashed #b8cadc;
+    border-radius: 10px;
+    background: var(--bg);
+}
+#your-reservation .wk-sec h4 { font-size: 14px; margin-bottom: 8px; }
+#your-reservation .wk-sec .muted-text { line-height: 1.5; font-size: 12px !important; margin-bottom: 12px !important; }
+#your-reservation .wk-lines { padding: 10px; }
+#your-reservation .wk-sum { padding: 14px; margin-top: 0; }
+#your-reservation .wk-sum .r { padding: 4px 0; font-size: 13px; }
+#your-reservation .wk-sum .t { padding-top: 10px; margin-top: 8px; font-size: 16px; }
+#your-reservation .full { margin-top: 0; }
+#your-reservation :focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+@media(max-width:1000px) {
+    #your-reservation .wk-rform,
+    #your-reservation .wk-rscroll { flex: initial; }
+}
+@media(max-width:700px) {
+    #your-reservation { padding: 16px; }
+    #your-reservation .wk-field { font-size: 16px; }
+}
+@media(max-width:360px) {
+    #your-reservation .wk-two { grid-template-columns: minmax(0,1fr); }
+}
 
 .wk-rform {
     flex: 1;
@@ -252,9 +302,7 @@ $msg   = flash('draft');
 }
 
 .wk-rscroll {
-    flex: 1;
     min-height: 0;
-    overflow: auto;
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -390,9 +438,113 @@ $msg   = flash('draft');
 .wk-sum .r { display: flex; justify-content: space-between; gap: 10px; padding: 1px 0; }
 .wk-sum .d { color: #1b7a4a; }
 .wk-sum .t { border-top: 1px solid #cfe4fa; margin-top: 3px; padding-top: 3px; font-weight: 700; color: #17395f; font-size: 14px; }
+@media(max-width:700px) {
+    .wk-wrap { gap:20px; }
+    .wk-left { padding:0; border:0; background:transparent; }
+    .wk-tabs { gap:8px; margin-bottom:14px; }
+    .wk-tab { min-height:44px; padding:10px 12px; font-size:12px; }
+    .wk-grid { grid-template-columns:minmax(0,1fr); gap:12px; }
+    .wk-item {
+        display:grid;
+        grid-template-columns:84px minmax(0,1fr);
+        align-items:start;
+        gap:5px 14px;
+        padding:16px;
+        border-radius:14px;
+    }
+    .wk-item .wk-img {
+        grid-column:1;
+        grid-row:1 / span 5;
+        width:84px;
+        height:100px;
+        padding:6px;
+        background:var(--bg);
+        border-radius:10px;
+    }
+    .wk-item .wk-name,
+    .wk-item .wk-cat,
+    .wk-item .wk-price,
+    .wk-item .wk-meta,
+    .wk-item .wk-avail { grid-column:2; }
+    .wk-item .wk-name { font-size:15px; line-height:1.35; }
+    .wk-item .wk-cat,
+    .wk-item .wk-meta { font-size:12px; }
+    .wk-item .wk-price { font-size:15px; }
+    .wk-item .wk-avail { justify-self:start; font-size:11px; padding:3px 8px; }
+    .wk-item > select,
+    .wk-item .wk-row { grid-column:1 / -1; }
+    .wk-item select,
+    .wk-item input[type=number] { min-height:44px; font-size:16px; padding:9px 10px; }
+    .wk-item .wk-row { gap:10px; margin-top:6px; padding:0; }
+    .wk-item .wk-row input { width:64px !important; flex-basis:64px; }
+    .wk-item .wk-row .btn { min-height:44px; font-size:13px; padding:10px; }
+    .wk-left .scroll { overflow-x:auto; }
+    .wk-ctable th,
+    .wk-ctable td { padding:10px 6px; }
+    .wk-ctable input[type=number],
+    .wk-ctable select { min-height:44px; font-size:16px; }
+    .reservation-jump {
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        min-height:48px;
+        padding:12px 16px;
+        margin-bottom:14px;
+        border:1px solid var(--line);
+        border-radius:10px;
+        background:var(--white);
+        color:var(--navy);
+        font-size:14px;
+        font-weight:700;
+    }
+    #your-reservation { scroll-margin-top:110px; }
+    .wk-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+    .wk-item { display:flex; flex-direction:column; padding:10px; gap:6px; min-width:0; }
+    .wk-item .wk-img { width:100%; height:100px; }
+    .wk-item .wk-name { font-size:13px; }
+    .wk-item .wk-price { font-size:14px; }
+    .wk-item .wk-cat,
+    .wk-item .wk-meta { font-size:11px; }
+    .wk-item .wk-row { flex-wrap:wrap; margin-top:auto; width:100%; }
+    .wk-item .wk-row input { width:100% !important; flex:1 1 100%; }
+    .wk-item .wk-row .btn { flex:1 1 100%; font-size:12px; }
+    .wk-grid { align-items:stretch; }
+    .wk-item {
+        display:grid;
+        grid-template-columns:minmax(0,1fr);
+        grid-template-rows:64px 32px 18px 22px 44px 44px;
+        align-content:start;
+        gap:4px;
+        padding:8px;
+    }
+    .wk-item .wk-img { grid-column:1; grid-row:1; height:64px; }
+    .wk-item .wk-meta,
+    .wk-item .wk-cat { display:none; }
+    .wk-item .wk-name { grid-column:1; grid-row:2; line-height:1.35; align-self:center; }
+    .wk-item .wk-cat { grid-column:1; grid-row:3; }
+    .wk-item .wk-price { grid-column:1; grid-row:3; align-self:center; }
+    .wk-item .wk-avail { grid-column:1; grid-row:4; align-self:start; }
+    .wk-item > select { grid-column:1; grid-row:5; margin:0; }
+    .wk-item .wk-row { display:contents; }
+    .wk-item .wk-row input { grid-column:1; grid-row:5; width:52px !important; justify-self:start; }
+    .wk-item > select { grid-column:1; grid-row:5; width:calc(100% - 60px); justify-self:end; font-size:12px; padding:8px 4px; }
+    .wk-item .wk-row .btn { grid-column:1; grid-row:6; width:100%; }
+    .wk-item:not(:has(> select)) .wk-row input { width:100% !important; }
+    .wk-item .wk-row input { text-align:center; }
+    .wk-item .wk-row .btn { line-height:1.3; padding:10px 4px; }
+    .reservation-jump { width:100%; cursor:pointer; }
+    .reservation-jump[hidden] { display:none; }
+    .reservation-modal #your-reservation { border:0; padding:0; }
+    .reservation-modal #your-reservation .wk-rhead h3 { display:none; }
+    .reservation-modal #your-reservation .wk-rhead { justify-content:flex-end; }
+    .reservation-modal .modal-heading { position:sticky; top:-24px; background:var(--white); z-index:2; padding-bottom:12px; }
+}
+@media(max-width:480px) { .reservation-modal .modal-heading { top:-20px; } }
+@media(min-width:701px) { .reservation-jump { display:none; } }
 </style>
 
 
+<button type="button" class="reservation-jump" id="open-reservation" hidden><span>Your reservation</span><iconify-icon icon="solar:bag-outline" aria-hidden="true"></iconify-icon></button>
 <div class="wk-wrap">
 
     <!-- LEFT: ITEMS / BUILD A COMBO -->
@@ -439,7 +591,7 @@ $msg   = flash('draft');
                         <?php endif; ?>
 
                         <div class="wk-meta">
-                            Max <?= (int)$item["max_days"] ?> day(s)
+                            <?= (int)$item["max_days"] > 0 ? 'Max ' . (int)$item["max_days"] . ' day(s)' : 'No duration limit' ?>
                             <?php if ((float)$item["penalty_per_day"] > 0): ?>
                                 &middot; Late penalty ₱<?= number_format((float)$item["penalty_per_day"], 2) ?>/day
                             <?php endif; ?>
@@ -588,6 +740,32 @@ $msg   = flash('draft');
 </div>
 
 
+<dialog class="action-modal reservation-modal" id="reservation-modal" aria-labelledby="reservation-modal-title">
+    <div class="modal-heading">
+        <h2 id="reservation-modal-title">Your reservation</h2>
+        <button type="button" class="modal-close" id="close-reservation" aria-label="Close reservation"><iconify-icon icon="solar:close-circle-outline" aria-hidden="true"></iconify-icon></button>
+    </div>
+</dialog>
+<script>
+(function () {
+    const panel = document.getElementById('your-reservation');
+    const modal = document.getElementById('reservation-modal');
+    const button = document.getElementById('open-reservation');
+    const marker = document.createComment('reservation panel');
+    panel.before(marker);
+    const mobile = window.matchMedia('(max-width:700px)');
+    function syncReservation() {
+        if (modal.open) modal.close();
+        if (mobile.matches) modal.append(panel);
+        else marker.after(panel);
+        button.hidden = !mobile.matches;
+    }
+    button.addEventListener('click', function () { modal.showModal(); });
+    document.getElementById('close-reservation').addEventListener('click', function () { modal.close(); });
+    mobile.addEventListener('change', syncReservation);
+    syncReservation();
+})();
+</script>
 <script>
 (function () {
 

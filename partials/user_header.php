@@ -15,10 +15,6 @@ $userName = $_SESSION["full_name"] ?? "User";
    HELPERS
 ========================= */
 
-function short_date($d) {
-    return date("M j, Y", strtotime($d));
-}
-
 /* Text + style for the due date of a rental */
 function due_text($returnDate) {
     $today = strtotime(date("Y-m-d"));
@@ -117,7 +113,7 @@ $reminderShown = array_slice($reminders, 0, 5);
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title><?= e($page_title) ?> | Local Rentals</title>
-<link rel="stylesheet" href="<?= $base ?>assets/style.css">
+<link rel="stylesheet" href="<?= $base ?>assets/style.css?v=<?= filemtime(__DIR__ . '/../assets/style.css') ?>">
 
 <style>
 .account-area { position: relative; }
@@ -222,13 +218,15 @@ $reminderShown = array_slice($reminders, 0, 5);
     padding: 5px 0;
 }
 </style>
+<script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js" defer></script>
 </head>
 
 <body>
 <div class="app-shell">
 
 <!-- SIDEBAR -->
-<aside class="sidebar">
+<noscript><style>@media(max-width:700px){.sidebar{display:flex}}</style></noscript>
+<aside class="sidebar" id="site-sidebar" aria-label="Main navigation">
 
     <div class="brand-mini">
         <img src="<?= $base ?>images/logo.jpeg" alt="Logo">
@@ -237,32 +235,34 @@ $reminderShown = array_slice($reminders, 0, 5);
 
     <nav>
         <a class="<?= ($active ?? '') === 'items' ? 'active' : '' ?>" href="<?= $base ?>user/items.php">
-            ⌕ <span>Browse Items</span>
+            <iconify-icon icon="solar:magnifer-outline" aria-hidden="true"></iconify-icon> <span>Browse Items</span>
         </a>
 
         <a class="<?= ($active ?? '') === 'reservations' ? 'active' : '' ?>" href="<?= $base ?>user/reservations.php">
-            ▤ <span>My Reservations</span>
+            <iconify-icon icon="solar:calendar-outline" aria-hidden="true"></iconify-icon> <span>My Reservations</span>
         </a>
 
         <a class="<?= ($active ?? '') === 'rentals' ? 'active' : '' ?>" href="<?= $base ?>user/rentals.php">
-            ▣ <span>My Rentals</span>
+            <iconify-icon icon="solar:box-outline" aria-hidden="true"></iconify-icon> <span>My Rentals</span>
         </a>
 
         <a class="<?= ($active ?? '') === 'profile' ? 'active' : '' ?>" href="<?= $base ?>user/profile.php">
-            ♙ <span>Profile</span>
+            <iconify-icon icon="solar:user-circle-outline" aria-hidden="true"></iconify-icon> <span>Profile</span>
         </a>
     </nav>
 
     <a class="logout-link" href="<?= $base ?>logout.php">
-        ↪ <span>Logout</span>
+        <iconify-icon icon="solar:logout-2-outline" aria-hidden="true"></iconify-icon> <span>Logout</span>
     </a>
 
 </aside>
+<script src="<?= $base ?>assets/navigation.js?v=<?= filemtime(__DIR__ . '/../assets/navigation.js') ?>"></script>
 
 <!-- MAIN CONTENT -->
 <main class="main-content">
 
 <header class="topbar">
+    <button type="button" class="menu-toggle" aria-controls="site-sidebar" aria-expanded="false" aria-label="Open navigation" hidden><iconify-icon icon="solar:hamburger-menu-outline" aria-hidden="true"></iconify-icon></button>
 
     <div>
         <h1><?= e($page_title) ?></h1>
@@ -272,7 +272,7 @@ $reminderShown = array_slice($reminders, 0, 5);
     <div class="account-area">
 
         <div class="account-chip" id="userAccountButton">
-            ● <?= e($userName) ?>
+            <iconify-icon icon="solar:user-circle-outline" aria-hidden="true"></iconify-icon> <?= e($userName) ?>
             <?php if ($newNotifications > 0): ?>
                 <span class="user-notification-badge" id="notificationBadge"><?= $newNotifications ?></span>
             <?php endif; ?>
@@ -285,12 +285,12 @@ $reminderShown = array_slice($reminders, 0, 5);
 
             <!-- NOTIFICATIONS (shown once) -->
             <div class="dropdown-section">
-                <div class="dropdown-title">🔔 Notifications</div>
+                <div class="dropdown-title"><iconify-icon icon="solar:bell-outline" aria-hidden="true"></iconify-icon> Notifications</div>
 
                 <?php foreach ($notifications as $n): ?>
 
                     <a href="<?= $base ?>user/reservations.php" class="dropdown-item">
-                        <div class="dropdown-icon"><?= $n["status"] === "Approved" ? "✓" : "!" ?></div>
+                        <div class="dropdown-icon"><iconify-icon icon="<?= $n["status"] === "Approved" ? 'solar:check-circle-outline' : 'solar:danger-circle-outline' ?>" aria-hidden="true"></iconify-icon></div>
                         <div class="dropdown-text">
                             <strong>Reservation <?= $n["status"] === "Approved" ? "approved" : "rejected" ?></strong>
                             <small>
@@ -316,7 +316,7 @@ $reminderShown = array_slice($reminders, 0, 5);
                     <?php [$dueLabel, $dueClass] = due_text($r["return_date"]); ?>
 
                     <a href="<?= $base ?>user/rentals.php" class="dropdown-item">
-                        <div class="dropdown-icon"><?= $dueClass === "ok" ? "📅" : "⏰" ?></div>
+                        <div class="dropdown-icon"><iconify-icon icon="<?= $dueClass === "ok" ? 'solar:calendar-outline' : 'solar:alarm-outline' ?>" aria-hidden="true"></iconify-icon></div>
                         <div class="dropdown-text">
                             <strong><?= e($r["item_name"]) ?> × <?= max(1, (int)$r["quantity"]) ?></strong>
                             <small>Return by <?= e(short_date($r["return_date"])) ?></small>

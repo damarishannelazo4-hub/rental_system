@@ -29,9 +29,13 @@ $imageMap = [
    DELETE ITEM
 ========================= */
 
-if (isset($_GET["delete"])) {
+if ($_SERVER["REQUEST_METHOD"] === "POST" || isset($_GET["delete"])) {
+    require_csrf();
+}
 
-    $id = (int) $_GET["delete"];
+if (isset($_POST["delete"])) {
+
+    $id = (int) $_POST["delete"];
 
     $stmt = $conn->prepare("DELETE FROM items WHERE item_id = ?");
     $stmt->bind_param("i", $id);
@@ -106,10 +110,38 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     if (in_array($postedImage, $imageMap, true)) {
         $image = $postedImage;
     } else {
-        $image = $imageMap[$name] ?? "";
+        $image = $imageMap[$name] ?? 'tent_square.jpg';
+        if ($id > 0) {
+            $current = $conn->prepare('SELECT image FROM items WHERE item_id = ?');
+            $current->bind_param('i', $id);
+            $current->execute();
+            $image = $current->get_result()->fetch_assoc()['image'] ?? $image;
+            $current->close();
+        }
     }
 
 
+    $uploadedPath = null;
+    if (isset($_FILES['item_image']) && $_FILES['item_image']['error'] !== UPLOAD_ERR_NO_FILE) {
+        $file = $_FILES['item_image'];
+        $mime = $file['error'] === UPLOAD_ERR_OK ? (new finfo(FILEINFO_MIME_TYPE))->file($file['tmp_name']) : false;
+        $extensions = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
+        if ($file['error'] !== UPLOAD_ERR_OK || $file['size'] <= 0 || $file['size'] > 5 * 1024 * 1024
+            || !isset($extensions[$mime]) || !@getimagesize($file['tmp_name'])) {
+            flash('error', 'Choose a valid JPG, PNG or WebP image, up to 5 MB.');
+            header('Location: items.php');
+            exit;
+        }
+        $image = 'item_' . bin2hex(random_bytes(16)) . '.' . $extensions[$mime];
+        $uploadedPath = dirname(__DIR__) . '/images/' . $image;
+        if (!move_uploaded_file($file['tmp_name'], $uploadedPath)) {
+            flash('error', 'Image could not be saved. Please try again.');
+            header('Location: items.php');
+            exit;
+        }
+    }
+
+    try {
     /* UPDATE (hindi ginagalaw ang status) */
 
     if ($id > 0) {
@@ -153,6 +185,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         $stmt->close();
         flash("success", "Item added.");
+    }
+    } catch (Throwable $error) {
+        if ($uploadedPath !== null) unlink($uploadedPath);
+        error_log($error->getMessage());
+        flash('error', 'Item could not be saved. Please try again.');
     }
 
     header("Location: items.php");
@@ -318,15 +355,15 @@ while ($sr = $stockRes->fetch_assoc()) {
 <div class="items-stack">
 
 
-    <!-- ADD / EDIT ITEM (nasa taas, pahiga) -->
-
-    <section class="panel">
+    <!-- Form fields reused by the edit modal. -->
+    <template id="item-form-template">
 
         <div class="panel-head">
             <h2><?= $edit ? "Edit Item" : "Add Item" ?></h2>
         </div>
 
-        <form method="POST" class="item-form">
+        <form method="POST" class="item-form" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
 
             <input type="hidden" name="item_id" value="<?= e($edit["item_id"] ?? 0) ?>">
 
@@ -350,15 +387,22 @@ while ($sr = $stockRes->fetch_assoc()) {
                 <input type="number" name="total_qty" min="0" step="1" value="<?= e($edit["total_qty"] ?? 1) ?>" required>
             </label>
 
-            <label>
+            <label class="item-image-choice">
                 Image File
-                <select name="image" required>
+                <select name="image">
+                    <option value="">Keep current / default image</option>
                     <?php foreach ($imageMap as $itemName => $filename): ?>
                         <option value="<?= e($filename) ?>" <?= ($selectedImage === $filename) ? "selected" : "" ?>>
                             <?= e($itemName) ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
+            </label>
+
+            <label class="item-image-upload">
+                Upload image
+                <input type="file" name="item_image" accept="image/jpeg,image/png,image/webp">
+                <small>JPG, PNG or WebP, up to 5 MB. Upload overrides the selected image.</small>
             </label>
 
             <div class="item-form-actions">
@@ -375,16 +419,19 @@ while ($sr = $stockRes->fetch_assoc()) {
 
         </form>
 
-    </section>
+    </template>
 
 
     <!-- ITEMS (buong lapad, nasa ilalim) -->
 
     <section class="panel">
 
-        <div class="panel-head">
-            <h2>Items</h2>
-            <span class="muted-text"><?= $items->num_rows ?> items</span>
+        <div class="panel-head items-toolbar">
+            <div class="items-toolbar-title">
+                <h2>Items</h2>
+                <span class="muted-text"><?= $items->num_rows ?> items</span>
+            </div>
+            <button type="button" class="btn primary" id="create-item"><iconify-icon icon="solar:add-circle-outline" aria-hidden="true"></iconify-icon><span>Add new item</span></button>
         </div>
 
         <div class="table-wrap">
@@ -437,6 +484,7 @@ while ($sr = $stockRes->fetch_assoc()) {
                                 </div>
 
                                 <form method="POST" class="stock-form">
+                                    <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
                                     <input type="hidden" name="action" value="add_stock">
                                     <input type="hidden" name="item_id" value="<?= (int) $item["item_id"] ?>">
                                     <input type="number" name="add_qty" min="1" placeholder="+ pcs" required>
@@ -459,10 +507,12 @@ while ($sr = $stockRes->fetch_assoc()) {
                         <!-- ACTIONS -->
 
                         <td style="white-space:nowrap;">
-                            <a class="icon-btn edit" href="?edit=<?= (int) $item["item_id"] ?>" title="Edit Item">✎</a>
+                            <button type="button" class="icon-btn edit" data-edit-item="<?= e(json_encode($item, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT)) ?>" title="Edit Item" aria-label="Edit item"><iconify-icon icon="solar:pen-outline" aria-hidden="true"></iconify-icon></button>
 
-                            <a class="icon-btn delete" href="?delete=<?= (int) $item["item_id"] ?>"
-                               onclick="return confirm('Delete this item?')" title="Delete Item">✕</a>
+                            <form method="POST" style="display:inline" data-confirm-delete>
+                                <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
+                                <button class="icon-btn delete" name="delete" value="<?= (int) $item["item_id"] ?>" aria-label="Delete item"><iconify-icon icon="solar:trash-bin-trash-outline" aria-hidden="true"></iconify-icon></button>
+                            </form>
                         </td>
 
                     </tr>
@@ -485,4 +535,89 @@ while ($sr = $stockRes->fetch_assoc()) {
 
 </div>
 
+<dialog class="action-modal" id="edit-item-modal" aria-labelledby="edit-item-title">
+    <div class="modal-heading"><div><h2 id="edit-item-title">Edit item</h2><p>Update item details and inventory.</p></div><button type="button" class="modal-close" aria-label="Close edit dialog" onclick="this.closest('dialog').close()"><iconify-icon icon="solar:close-circle-outline" aria-hidden="true"></iconify-icon></button></div>
+    <div id="edit-item-fields"></div>
+</dialog>
+<dialog class="action-modal delete-modal" id="delete-item-modal" aria-labelledby="delete-item-title" aria-describedby="delete-item-description">
+    <div class="modal-heading"><div class="delete-symbol"><iconify-icon icon="solar:trash-bin-trash-outline" aria-hidden="true"></iconify-icon></div><button type="button" class="modal-close" aria-label="Close delete dialog" onclick="this.closest('dialog').close()"><iconify-icon icon="solar:close-circle-outline" aria-hidden="true"></iconify-icon></button></div>
+    <h2 id="delete-item-title">Delete item?</h2>
+    <p id="delete-item-description">This permanently removes the item. This cannot be undone.</p>
+    <div class="form-actions">
+        <button type="button" class="btn" id="cancel-item-delete">Cancel</button>
+        <button type="button" class="btn danger" id="confirm-item-delete">Delete item</button>
+    </div>
+</dialog>
+<script>
+(function () {
+    const modal = document.getElementById('edit-item-modal');
+    const source = document.getElementById('item-form-template').content.querySelector('.item-form');
+    const form = source.cloneNode(true);
+    form.action = 'items.php';
+    const actions = form.querySelector('.item-form-actions');
+    actions.replaceChildren();
+    const save = document.createElement('button');
+    save.type = 'submit';
+    save.className = 'btn primary';
+    save.innerHTML = '<iconify-icon icon="solar:diskette-outline" aria-hidden="true"></iconify-icon> Save changes';
+    const cancel = document.createElement('button');
+    cancel.type = 'button';
+    cancel.className = 'btn';
+    cancel.textContent = 'Cancel';
+    cancel.addEventListener('click', function () { modal.close(); });
+    actions.append(save, cancel);
+    document.getElementById('edit-item-fields').append(form);
+    document.getElementById('create-item').addEventListener('click', function () {
+        form.reset();
+        form.elements.namedItem('item_id').value = '0';
+        form.elements.namedItem('item_name').value = '';
+        form.elements.namedItem('category').value = '';
+        form.elements.namedItem('price_per_day').value = '';
+        form.elements.namedItem('total_qty').value = '1';
+        form.elements.namedItem('image').value = '';
+        document.getElementById('edit-item-title').textContent = 'Add new item';
+        save.textContent = 'Add item';
+        modal.showModal();
+    });
+    document.querySelectorAll('[data-edit-item]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            const item = JSON.parse(button.dataset.editItem);
+            document.getElementById('edit-item-title').textContent = 'Edit item';
+            save.textContent = 'Save changes';
+            form.reset();
+            ['item_id', 'item_name', 'category', 'price_per_day', 'total_qty', 'image'].forEach(function (name) {
+                form.elements.namedItem(name).value = item[name] ?? '';
+            });
+            if (!form.elements.namedItem('image').value) {
+                form.elements.namedItem('image').value = '';
+            }
+            modal.showModal();
+        });
+    });
+    const confirmation = document.getElementById('delete-item-modal');
+    let pending;
+    document.querySelectorAll('[data-confirm-delete]').forEach(function (deleteForm) {
+        deleteForm.addEventListener('submit', function (event) {
+            event.preventDefault();
+            pending = { form: deleteForm, button: event.submitter };
+            const name = deleteForm.closest('tr').querySelector('[data-edit-item]');
+            const item = name ? JSON.parse(name.dataset.editItem) : null;
+            document.getElementById('delete-item-title').textContent = item ? 'Delete ' + item.item_name + '?' : 'Delete item?';
+            confirmation.showModal();
+            document.getElementById('cancel-item-delete').focus();
+        });
+    });
+    document.getElementById('cancel-item-delete').addEventListener('click', function () { confirmation.close(); });
+    document.getElementById('confirm-item-delete').addEventListener('click', function () {
+        if (!pending) return;
+        const id = document.createElement('input');
+        id.type = 'hidden';
+        id.name = 'delete';
+        id.value = pending.button.value;
+        pending.form.append(id);
+        pending.form.submit();
+    });
+    confirmation.addEventListener('close', function () { pending = null; });
+})();
+</script>
 <?php require "../partials/footer.php"; ?>

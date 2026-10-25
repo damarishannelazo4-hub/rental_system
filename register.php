@@ -14,6 +14,8 @@ $first    = "";
 $middle   = "";
 $last     = "";
 $username = "";
+$contact = "";
+$address = "";
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $first    = trim($_POST["first_name"] ?? "");
@@ -22,9 +24,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $username = trim($_POST["username"] ?? "");
     $password = $_POST["password"] ?? "";
     $confirm  = $_POST["confirm"] ?? "";
+    $contact = trim($_POST["contact_number"] ?? "");
+    $address = trim($_POST["address"] ?? "");
 
     if ($first === "" || $last === "" || $username === "" || $password === "") {
         $error = "Please fill in first name, last name, username and password.";
+    } elseif (!preg_match('/\A(?:09[0-9]{9}|\+639[0-9]{9})\z/', $contact)) {
+        $error = "Enter a valid mobile number: 09XXXXXXXXX or +639XXXXXXXXX.";
+    } elseif ($address === "" || mb_strlen($address) > 255) {
+        $error = "Enter your address (up to 255 characters).";
     } elseif (strlen($password) < 6) {
         $error = "Password must be at least 6 characters.";
     } elseif ($password !== $confirm) {
@@ -44,10 +52,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $role = "user";
 
             $stmt = $conn->prepare(
-                "INSERT INTO users (full_name, first_name, middle_name, last_name, username, password, role)
-                 VALUES (?, ?, ?, ?, ?, ?, ?)"
+                "INSERT INTO users (full_name, first_name, middle_name, last_name, username, password, role, contact_number, address)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
             );
-            $stmt->bind_param("sssssss", $full, $first, $middle, $last, $username, $hash, $role);
+            $stmt->bind_param("sssssssss", $full, $first, $middle, $last, $username, $hash, $role, $contact, $address);
 
             if ($stmt->execute()) {
                 $stmt->close();
@@ -224,6 +232,12 @@ body.login-page {
 
             <label>Middle Name (optional)</label>
             <input type="text" name="middle_name" value="<?= e($middle) ?>">
+
+            <label for="contact_number">Contact Number</label>
+            <input type="tel" id="contact_number" name="contact_number" value="<?= e($contact) ?>" placeholder="09XXXXXXXXX" autocomplete="tel" pattern="(09[0-9]{9}|\+639[0-9]{9})" maxlength="13" required>
+
+            <label for="address">Address</label>
+            <input type="text" id="address" name="address" value="<?= e($address) ?>" autocomplete="street-address" maxlength="255" required>
 
             <label>Username</label>
             <input type="text" name="username" value="<?= e($username) ?>" required>
