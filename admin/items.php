@@ -431,7 +431,7 @@ while ($sr = $stockRes->fetch_assoc()) {
                 <h2>Items</h2>
                 <span class="muted-text"><?= $items->num_rows ?> items</span>
             </div>
-            <button type="button" class="btn primary" id="create-item"><iconify-icon icon="solar:add-circle-outline" aria-hidden="true"></iconify-icon><span>Create new item</span></button>
+            <button type="button" class="btn primary" id="create-item"><iconify-icon icon="solar:add-circle-outline" aria-hidden="true"></iconify-icon><span>Add new item</span></button>
         </div>
 
         <div class="table-wrap">
@@ -575,8 +575,8 @@ while ($sr = $stockRes->fetch_assoc()) {
         form.elements.namedItem('price_per_day').value = '';
         form.elements.namedItem('total_qty').value = '1';
         form.elements.namedItem('image').value = '';
-        document.getElementById('edit-item-title').textContent = 'Create new item';
-        save.textContent = 'Create item';
+        document.getElementById('edit-item-title').textContent = 'Add new item';
+        save.textContent = 'Add item';
         modal.showModal();
     });
     document.querySelectorAll('[data-edit-item]').forEach(function (button) {

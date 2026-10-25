@@ -1,7 +1,11 @@
 document.addEventListener('DOMContentLoaded', function () {
     const toggle = document.querySelector('.menu-toggle');
     const sidebar = document.getElementById('site-sidebar');
-    if (!toggle || !sidebar || typeof HTMLDialogElement === 'undefined') return;
+    if (!toggle || !sidebar) return;
+    if (typeof HTMLDialogElement === 'undefined' || !HTMLDialogElement.prototype.showModal) {
+        sidebar.style.display = 'flex';
+        return;
+    }
     const mobile = window.matchMedia('(max-width:700px)');
     const marker = document.createComment('sidebar');
     sidebar.before(marker);

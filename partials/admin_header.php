@@ -269,6 +269,7 @@ if ($result) {
 
 <div class="app-shell">
 
+<noscript><style>@media(max-width:700px){.sidebar{display:flex}}</style></noscript>
 <aside class="sidebar" id="site-sidebar" aria-label="Main navigation">
 
     <div class="brand-mini">
@@ -325,7 +326,7 @@ if ($result) {
     </a>
 
 </aside>
-<script src="<?= $base ?>assets/navigation.js?v=1"></script>
+<script src="<?= $base ?>assets/navigation.js?v=<?= filemtime(__DIR__ . '/../assets/navigation.js') ?>"></script>
 
 <main class="main-content">
 

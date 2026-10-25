@@ -225,6 +225,7 @@ $reminderShown = array_slice($reminders, 0, 5);
 <div class="app-shell">
 
 <!-- SIDEBAR -->
+<noscript><style>@media(max-width:700px){.sidebar{display:flex}}</style></noscript>
 <aside class="sidebar" id="site-sidebar" aria-label="Main navigation">
 
     <div class="brand-mini">
@@ -255,7 +256,7 @@ $reminderShown = array_slice($reminders, 0, 5);
     </a>
 
 </aside>
-<script src="<?= $base ?>assets/navigation.js?v=1"></script>
+<script src="<?= $base ?>assets/navigation.js?v=<?= filemtime(__DIR__ . '/../assets/navigation.js') ?>"></script>
 
 <!-- MAIN CONTENT -->
 <main class="main-content">

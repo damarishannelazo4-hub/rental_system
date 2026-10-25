@@ -1081,11 +1081,16 @@ tr:hover td{
     }
 
     .sidebar{
+        display:none;
         position:relative;
         width:100%;
         padding:16px;
         gap:8px;
         overflow-y:auto
+    }
+
+    .nav-drawer .sidebar{
+        display:flex
     }
 
     .nav-drawer{

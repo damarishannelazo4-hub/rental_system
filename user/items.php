@@ -512,7 +512,7 @@ $msg   = flash('draft');
     .wk-item {
         display:grid;
         grid-template-columns:minmax(0,1fr);
-        grid-template-rows:64px 32px 18px 22px 44px 44px 44px;
+        grid-template-rows:64px 32px 18px 22px 44px 44px;
         align-content:start;
         gap:4px;
         padding:8px;
@@ -522,11 +522,14 @@ $msg   = flash('draft');
     .wk-item .wk-cat { display:none; }
     .wk-item .wk-name { grid-column:1; grid-row:2; line-height:1.35; align-self:center; }
     .wk-item .wk-cat { grid-column:1; grid-row:3; }
-    .wk-item .wk-price { grid-column:1; grid-row:4; align-self:center; }
-    .wk-item .wk-meta { grid-column:1; grid-row:5; }
-    .wk-item .wk-avail { grid-column:1; grid-row:6; align-self:start; }
-    .wk-item > select { grid-column:1; grid-row:7; margin:0; }
-    .wk-item .wk-row { grid-column:1; grid-row:8; margin:0; gap:8px; }
+    .wk-item .wk-price { grid-column:1; grid-row:3; align-self:center; }
+    .wk-item .wk-avail { grid-column:1; grid-row:4; align-self:start; }
+    .wk-item > select { grid-column:1; grid-row:5; margin:0; }
+    .wk-item .wk-row { display:contents; }
+    .wk-item .wk-row input { grid-column:1; grid-row:5; width:52px !important; justify-self:start; }
+    .wk-item > select { grid-column:1; grid-row:5; width:calc(100% - 60px); justify-self:end; font-size:12px; padding:8px 4px; }
+    .wk-item .wk-row .btn { grid-column:1; grid-row:6; width:100%; }
+    .wk-item:not(:has(> select)) .wk-row input { width:100% !important; }
     .wk-item .wk-row input { text-align:center; }
     .wk-item .wk-row .btn { line-height:1.3; padding:10px 4px; }
     .reservation-jump { width:100%; cursor:pointer; }
