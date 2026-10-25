@@ -343,7 +343,7 @@ $hasDraft = ($draft || $draftCombos);
             <h4>Valid ID</h4>
 
             <p class="muted-text" style="margin:0 0 6px; font-size:11px;">
-                Upload a clear photo of your valid ID or use your laptop camera. Max 5 MB.
+                Upload a clear JPG or PNG, or use your camera. Maximum 5 MB.
             </p>
 
             <input type="file"
@@ -355,11 +355,11 @@ $hasDraft = ($draft || $draftCombos);
             <div style="display:flex; gap:6px; flex-wrap:wrap;">
 
                 <button type="button" class="btn tiny primary" id="upload-btn">
-                    📁 Upload ID
+                    <iconify-icon icon="solar:upload-outline" aria-hidden="true"></iconify-icon> Upload ID
                 </button>
 
                 <button type="button" class="btn tiny" id="camera-btn">
-                    📷 Open Camera
+                    <iconify-icon icon="solar:camera-outline" aria-hidden="true"></iconify-icon> Open Camera
                 </button>
 
             </div>

@@ -104,10 +104,10 @@ $customers = $conn->query("SELECT * FROM users WHERE role='user' ORDER BY user_i
         <td><?= e($c["contact_number"]) ?></td>
         <td><?= e($c["address"]) ?></td>
         <td>
-            <a class="icon-btn edit" href="?edit=<?= (int)$c["user_id"] ?>">✎</a>
+            <a class="icon-btn edit" href="?edit=<?= (int)$c["user_id"] ?>" aria-label="Edit customer"><iconify-icon icon="solar:pen-outline" aria-hidden="true"></iconify-icon></a>
             <form method="POST" style="display:inline" onsubmit="return confirm('Delete customer?')">
                 <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
-                <button class="icon-btn delete" name="delete" value="<?= (int)$c["user_id"] ?>" aria-label="Delete customer">✕</button>
+                <button class="icon-btn delete" name="delete" value="<?= (int)$c["user_id"] ?>" aria-label="Delete customer"><iconify-icon icon="solar:trash-bin-trash-outline" aria-hidden="true"></iconify-icon></button>
             </form>
         </td>
     </tr>

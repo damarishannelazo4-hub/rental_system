@@ -54,9 +54,8 @@ $quick = [
 /* =========================
    RENTAL DETAILS (also used by the CSV export)
 
-   ORDER: Returned rentals first, newest "Mark as Returned" on top,
+   ORDER: Returned rentals first, newest actual return date on top,
           then the Ongoing ones below.
-   (needs the rentals.returned_at column - see 1_migration.sql)
 ========================= */
 
 $detailSql = "SELECT r.*, u.full_name, i.item_name, i.price_per_day, i.penalty_per_day
@@ -66,7 +65,6 @@ $detailSql = "SELECT r.*, u.full_name, i.item_name, i.price_per_day, i.penalty_p
               WHERE (r.rental_date BETWEEN ? AND ?)
                  OR (r.actual_return_date BETWEEN ? AND ?)
               ORDER BY (r.status = 'Returned') DESC,
-                       r.returned_at DESC,
                        r.actual_return_date DESC,
                        r.rental_id DESC";
 
@@ -288,43 +286,94 @@ $qs = "from=" . urlencode($from) . "&to=" . urlencode($to);
 .report-filter {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 16px;
     align-items: end;
-    padding: 12px;
-    margin-bottom: 16px;
-    background: #fff;
-    border: 1px solid #cfd6de;
+    padding: 20px;
+    margin-bottom: 20px;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 12px;
 }
 
 .report-filter label {
     display: flex;
+    flex: 1 1 160px;
+    max-width: 220px;
+    min-width: 0;
     flex-direction: column;
-    gap: 4px;
+    gap: 8px;
     font-size: 12px;
     font-weight: 700;
+    color: var(--muted);
 }
 
 .report-filter input[type=date] {
-    padding: 6px 8px;
-    border: 1px solid #999;
-    font-size: 13px;
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+    font: inherit;
+    font-size: 14px;
+}
+
+.report-filter .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    white-space: nowrap;
+}
+
+.report-export-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-left: auto;
 }
 
 .report-quick {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
     width: 100%;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
     font-size: 12px;
 }
 
 .report-quick a {
-    color: #0645ad;
-    text-decoration: underline;
-    margin-right: 12px;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 8px 14px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--text);
+    text-decoration: none;
 }
 
 .report-quick a.on {
     font-weight: 700;
-    color: #000;
-    text-decoration: none;
+    color: var(--navy);
+    background: #eaf3fd;
+    border-color: #a9cbed;
+}
+
+.report-filter :focus-visible {
+    outline: 2px solid var(--blue);
+    outline-offset: 3px;
+}
+
+@media(max-width:600px) {
+    .report-filter { padding: 16px; gap: 12px; }
+    .report-filter label { flex: 1 1 calc(50% - 12px); max-width: none; }
+    .report-export-actions { margin-left: 0; flex: 1 1 100%; }
+    .report-export-actions .btn { flex: 1; }
 }
 
 /* ---- Excel-style tables ---- */
@@ -418,9 +467,11 @@ $qs = "from=" . urlencode($from) . "&to=" . urlencode($to);
         <input type="date" name="to" value="<?= e($to) ?>" required>
     </label>
 
-    <button class="btn small primary" type="submit">Apply</button>
-    <a class="btn small" href="reports.php?<?= $qs ?>&export=1">Export CSV</a>
-    <button class="btn small" type="button" onclick="window.print()">Print</button>
+    <button class="btn primary" type="submit"><iconify-icon icon="solar:filter-outline" aria-hidden="true"></iconify-icon> Apply filters</button>
+    <div class="report-export-actions">
+        <a class="btn" href="reports.php?<?= $qs ?>&export=1"><iconify-icon icon="solar:download-outline" aria-hidden="true"></iconify-icon> Export CSV</a>
+        <button class="btn" type="button" onclick="window.print()"><iconify-icon icon="solar:printer-outline" aria-hidden="true"></iconify-icon> Print</button>
+    </div>
 
     <div class="report-quick">
         <?php foreach ($quick as $label => [$qf, $qt]): ?>
